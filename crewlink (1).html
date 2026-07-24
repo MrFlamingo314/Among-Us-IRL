@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>CREWLINK // IRL Social Deduction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<style>
+:root{
+  --bg:#0a0e18;
+  --bg-vign: radial-gradient(120% 100% at 50% -10%, #131a2c 0%, #0a0e18 55%);
+  --panel:#121826;
+  --panel-2:#1a2233;
+  --line:#28324a;
+  --line-soft:#1e2740;
+  --text:#eef1f8;
+  --text-dim:#8493ae;
+  --text-faint:#586074;
+  --green:#38d996;
+  --green-dim:#1d5c46;
+  --red:#ff5a5f;
+  --red-dim:#5c2224;
+  --amber:#ffb454;
+  --amber-dim:#5c4419;
+  --font-display:'Space Grotesk',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0;
+  background:var(--bg-vign), var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  overflow-x:hidden;
+  min-height:100vh;
+  min-height:100dvh;
+}
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  background-image:repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 3px);
+  pointer-events:none;
+  z-index:9999;
+  mix-blend-mode:overlay;
+}
+#app{
+  min-height:100vh;
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+  max-width:520px;
+  margin:0 auto;
+  position:relative;
+}
+h1,h2,h3{font-family:var(--font-display); margin:0; letter-spacing:-0.01em;}
+.eyebrow{
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--text-dim);
+}
+.screen{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  padding:28px 20px 24px;
+  animation:fadein .35s ease;
+}
+@keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+.btn{
+  font-family:var(--font-body);
+  font-weight:600;
+  font-size:15px;
+  border:1px solid var(--line);
+  background:var(--panel-2);
+  color:var(--text);
+  border-radius:10px;
+  padding:14px 18px;
+  cursor:pointer;
+  transition:border-color .15s, transform .1s, background .15s;
+  -webkit-user-select:none; user-select:none;
+}
+.btn:active{transform:scale(0.97);}
+.btn:hover{border-color:#3a476a;}
+.btn-primary{background:var(--green); color:#04140d; border-color:var(--green);}
+.btn-primary:hover{background:#4fe3a6;}
+.btn-danger{background:var(--red); color:#2a0808; border-color:var(--red);}
+.btn-block{width:100%; display:block; text-align:center;}
+.btn-ghost{background:transparent; color:var(--text-dim);}
+.btn:disabled{opacity:0.35; cursor:not-allowed;}
+input[type=text]{
+  font-family:var(--font-mono);
+  font-size:16px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  color:var(--text);
+  border-radius:10px;
+  padding:14px 14px;
+  width:100%;
+  outline:none;
+}
+input[type=text]:focus{border-color:var(--green);}
+.stack{display:flex; flex-direction:column; gap:12px;}
+.row{display:flex; gap:10px; align-items:center;}
+.spacer{flex:1;}
+.card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:16px;
+}
+.divider{height:1px; background:var(--line); margin:18px 0; opacity:.7;}
+.logo{
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:26px;
+  letter-spacing:-0.02em;
+  display:flex; align-items:center; gap:10px;
+}
+.logo .dot{width:10px; height:10px; border-radius:3px; background:var(--green); box-shadow:0 0 14px var(--green);}
+.pill{
+  font-family:var(--font-mono);
+  font-size:11px;
+  padding:4px 9px;
+  border-radius:99px;
+  border:1px solid var(--line);
+  color:var(--text-dim);
+  letter-spacing:.04em;
+}
+.pill.on{color:var(--green); border-color:var(--green-dim); background:rgba(56,217,150,.08);}
+.pill.off{color:var(--text-dim);}
+.pill.dead{color:var(--red); border-color:var(--red-dim); background:rgba(255,90,95,.08);}
+
+/* ---- Landing ---- */
+.landing-hero{margin-top:8px; margin-bottom:34px;}
+.landing-hero p{color:var(--text-dim); font-size:14.5px; line-height:1.5; margin-top:10px;}
+.tag-strip{font-family:var(--font-mono); font-size:11px; color:var(--text-dim); letter-spacing:.08em; margin-top:14px;}
+
+/* ---- Task list builder ---- */
+.task-row{display:flex; align-items:center; gap:10px;}
+.task-row input{flex:1;}
+.icon-btn{
+  width:38px; height:38px; flex:0 0 38px;
+  border-radius:9px; border:1px solid var(--line); background:var(--panel-2);
+  color:var(--text-dim); font-size:18px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+}
+.stepper{display:flex; align-items:center; gap:14px;}
+.stepper button{width:38px; height:38px; border-radius:9px; border:1px solid var(--line); background:var(--panel-2); color:var(--text); font-size:18px;}
+.stepper .val{font-family:var(--font-mono); font-size:20px; min-width:28px; text-align:center;}
+
+/* ---- Lobby ---- */
+.room-code{
+  font-family:var(--font-mono);
+  font-size:38px;
+  letter-spacing:.12em;
+  font-weight:600;
+  text-align:center;
+  padding:22px 0;
+  color:var(--green);
+  text-shadow:0 0 24px rgba(56,217,150,.35);
+}
+.player-list{display:flex; flex-direction:column; gap:8px;}
+.player-item{
+  display:flex; align-items:center; gap:10px;
+  background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:11px 13px;
+}
+.avatar{
+  width:30px; height:30px; border-radius:8px; background:var(--panel-2); border:1px solid var(--line);
+  display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:12px; color:var(--text-dim); flex:0 0 30px;
+}
+.qr-card{
+  background:#fff; border-radius:14px; padding:14px; width:180px; margin:6px auto 14px;
+  display:flex; align-items:center; justify-content:center;
+}
+.qr-card svg{width:100%; height:100%; display:block;}
+
+/* ---- Role reveal ---- */
+.role-screen{align-items:center; justify-content:center; text-align:center;}
+.role-badge{
+  font-family:var(--font-display); font-weight:700; font-size:44px;
+  padding:26px 30px; border-radius:18px; margin-bottom:18px;
+}
+.role-badge.crew{color:var(--green); border:1px solid var(--green-dim); background:rgba(56,217,150,.08); box-shadow:0 0 40px rgba(56,217,150,.15);}
+.role-badge.imp{color:var(--red); border:1px solid var(--red-dim); background:rgba(255,90,95,.08); box-shadow:0 0 40px rgba(255,90,95,.18);}
+
+/* ---- Playing screen ---- */
+.progress-wrap{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:3px; margin-top:6px;}
+.progress-bar{height:8px; border-radius:7px; background:var(--green); transition:width .4s ease;}
+.task-item{
+  display:flex; align-items:center; gap:12px;
+  background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px;
+  cursor:pointer; transition:border-color .15s, opacity .15s;
+}
+.task-item.done{opacity:.5;}
+.task-check{
+  width:24px; height:24px; border-radius:7px; border:2px solid var(--line); flex:0 0 24px;
+  display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--green);
+}
+.task-item.done .task-check{background:var(--green); border-color:var(--green); color:#04140d;}
+.task-label{font-size:14.5px; line-height:1.3;}
+.task-label.done{text-decoration:line-through; color:var(--text-dim);}
+
+.roster-mini{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
+.roster-chip{font-family:var(--font-mono); font-size:11px; padding:5px 9px; border-radius:99px; border:1px solid var(--line); color:var(--text-dim);}
+.roster-chip.dead{color:var(--red); text-decoration:line-through; border-color:var(--red-dim);}
+
+/* ---- Emergency button ---- */
+.hazard-dock{position:sticky; bottom:0; padding:16px 0 4px; margin-top:auto; background:linear-gradient(0deg, var(--bg) 55%, transparent);}
+.hazard-btn{
+  position:relative;
+  width:100%;
+  border-radius:16px;
+  border:1px solid #5c2224;
+  background:repeating-linear-gradient(135deg, #2a1414, #2a1414 12px, #201010 12px, #201010 24px);
+  padding:16px;
+  cursor:pointer;
+  overflow:hidden;
+  -webkit-user-select:none; user-select:none;
+}
+.hazard-btn .cover{
+  position:absolute; inset:0;
+  background:repeating-linear-gradient(45deg, #ffb454, #ffb454 14px, #171008 14px, #171008 28px);
+  display:flex; align-items:center; justify-content:center;
+  transition:transform .3s cubic-bezier(.2,.8,.2,1);
+  transform-origin:top;
+  border-bottom:2px solid #0a0e18;
+}
+.hazard-btn.open .cover{transform:rotateX(-98deg); opacity:0;}
+.cover-label{font-family:var(--font-mono); font-weight:600; font-size:12px; color:#171008; letter-spacing:.1em;}
+.hazard-core{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  padding:10px 0;
+}
+.hazard-core .txt{font-family:var(--font-display); font-weight:700; color:var(--red); font-size:18px; letter-spacing:.03em;}
+.eliminate-btn{background:var(--red-dim); border-color:var(--red); color:#ffdcdc;}
+.picker-overlay{
+  position:fixed; inset:0; background:rgba(5,7,12,0.88); backdrop-filter:blur(2px);
+  display:flex; align-items:flex-end; justify-content:center; z-index:60;
+  animation:fadein .2s ease;
+}
+.picker-sheet{
+  width:100%; max-width:520px; background:var(--panel); border:1px solid var(--line); border-radius:20px 20px 0 0;
+  padding:24px 20px 30px;
+}
+
+/* ---- Meeting / Voting ---- */
+.meeting-screen{align-items:center; text-align:center; justify-content:flex-start; padding-top:44px;}
+.klaxon-icon{font-size:48px; margin-bottom:6px;}
+.timer-big{
+  font-family:var(--font-mono); font-weight:600; font-size:64px; color:var(--amber);
+  margin:18px 0; text-shadow:0 0 30px rgba(255,180,84,.3);
+}
+.vote-list{display:flex; flex-direction:column; gap:8px; width:100%; margin-top:14px;}
+.vote-item{
+  display:flex; align-items:center; gap:12px;
+  background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px;
+  cursor:pointer; text-align:left;
+}
+.vote-item.selected{border-color:var(--green); background:rgba(56,217,150,.08);}
+.vote-item.skip{color:var(--text-dim); justify-content:center; font-family:var(--font-mono); font-size:13px;}
+
+/* ---- Results / gameover ---- */
+.result-name{font-family:var(--font-display); font-weight:700; font-size:30px; margin:14px 0 4px;}
+.result-role{font-family:var(--font-mono); font-size:13px; letter-spacing:.08em;}
+.winner-banner{
+  font-family:var(--font-display); font-weight:700; font-size:34px; text-align:center; padding:30px 0;
+}
+
+/* Flash alert overlay */
+.flash-overlay{
+  position:fixed; inset:0; background:var(--red); opacity:0; pointer-events:none; z-index:50;
+  animation:flashpulse 1.1s ease-in-out 2;
+}
+@keyframes flashpulse{0%{opacity:0;} 15%{opacity:.55;} 30%{opacity:0;} 100%{opacity:0;}}
+
+.small-note{font-family:var(--font-mono); font-size:11px; color:var(--text-dim); line-height:1.5;}
+.center-col{display:flex; flex-direction:column; align-items:center;}
+::selection{background:var(--green); color:#04140d;}
+a{color:var(--green);}
+.hidden{display:none !important;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =========================================================
+   CREWLINK — IRL social deduction companion app
+   Peer-to-peer via PeerJS. One player's device is the host
+   (authoritative game state); everyone else connects directly
+   to it. No dedicated server beyond PeerJS's free public
+   signaling broker.
+   ========================================================= */
+
+const DEFAULT_TASKS = [
+  "Turn on the generator",
+  "Water the plants",
+  "Empty the trash",
+  "Fix the wifi router",
+  "Sort the mail",
+  "Refill the ice tray",
+  "Align the satellite (adjust the TV antenna)",
+  "Scan fingerprints (wipe a mirror clean)",
+  "Charge the batteries",
+  "Calibrate the thermostat"
+];
+
+let peer = null;            // PeerJS peer instance
+let conns = {};              // host only: id -> DataConnection
+let hostConn = null;         // client only: connection to host
+let connectTimeoutHandle = null;
+let debugLog = [];
+function logDbg(msg){
+  const t = new Date().toLocaleTimeString();
+  debugLog.push('['+t+'] '+msg);
+  if(debugLog.length>40) debugLog.shift();
+  console.log('[crewlink]', msg);
+  const el = document.querySelector('#app');
+  if(el && (local.phase==='connecting' || local.phase==='error')) render();
+}
+function setConnectStatus(msg){
+  local.connectStatus = msg;
+  logDbg(msg);
+  const s = document.getElementById('connectStatus');
+  if(s) s.textContent = msg;
+}
+
+let local = {
+  isHost:false,
+  myId:null,
+  myName:'',
+  roomCode:'',
+  phase:'landing',          // landing | hostSetup | connecting | lobby | role | playing | ghost | meeting | voting | results | gameover | error
+  role:null,
+  tasks:[],                 // my personal task list [{id,label,done}]
+  alive:true,
+  players:[],               // [{id,name,alive}]
+  taskProgress:{done:0,total:0},
+  settings:{imposterCount:1, tasksPerPlayer:5},
+  taskPool: DEFAULT_TASKS.slice(),
+  meeting:null,             // {calledByName}
+  voteCandidates:[],
+  myVote:null,
+  lastResult:null,          // {ejectedName, wasImposter, tally, skips}
+  gameOverInfo:null,        // {winner, roles:[{name,role}]}
+  errorMsg:'',
+  eliminatePickerOpen:false,
+  pendingJoinCode:null
+};
+
+// If this page was opened via an invite link (#room=CODE), skip straight
+// to a "join this game" prompt instead of the normal landing screen.
+(function detectInviteLink(){
+  const m = location.hash.match(/room=([A-Za-z0-9]+)/);
+  if(m){ local.pendingJoinCode = m[1].toUpperCase(); }
+})();
+
+// Host-only canonical game state
+let game = null;
+function newGame(){
+  return {
+    players:{}, // id -> {id,name,conn,role,alive,tasks:[{id,label,done}]}
+    settings: Object.assign({}, local.settings),
+    taskPool: local.taskPool.slice(),
+    phase:'lobby',
+    votes:{},
+  };
+}
+
+function uid(prefix){ return prefix + Math.random().toString(36).slice(2,8); }
+function roomCode(){
+  const A='ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let s='';
+  for(let i=0;i<5;i++) s+=A[Math.floor(Math.random()*A.length)];
+  return s;
+}
+
+/* ---------------- Rendering ---------------- */
+const app = document.getElementById('app');
+function render(){
+  let html = '';
+  switch(local.phase){
+    case 'landing': html = viewLanding(); break;
+    case 'hostSetup': html = viewHostSetup(); break;
+    case 'joinEntry': html = viewJoinEntry(); break;
+    case 'connecting': html = viewConnecting(); break;
+    case 'lobby': html = viewLobby(); break;
+    case 'role': html = viewRole(); break;
+    case 'playing': html = viewPlaying(); break;
+    case 'ghost': html = viewGhost(); break;
+    case 'meeting': html = viewMeeting(); break;
+    case 'voting': html = viewVoting(); break;
+    case 'results': html = viewResults(); break;
+    case 'gameover': html = viewGameOver(); break;
+    case 'error': html = viewError(); break;
+    default: html = viewLanding();
+  }
+  app.innerHTML = html;
+  bindEvents();
+}
+
+function screenWrap(inner, cls){
+  return `<div class="screen ${cls||''}">${inner}</div>`;
+}
+function logo(){
+  return `<div class="logo"><span class="dot"></span>CREWLINK</div>`;
+}
+
+/* ---- Landing ---- */
+function viewLanding(){
+  if(local.pendingJoinCode){
+    return screenWrap(`
+      <div class="landing-hero">
+        ${logo()}
+        <p>You've been invited to a game &mdash; room <strong style="color:var(--green);">${escapeHtml(local.pendingJoinCode)}</strong>.</p>
+        <div class="tag-strip">// INVITE LINK</div>
+      </div>
+      <div class="stack">
+        <input id="nameInput" type="text" placeholder="YOUR NAME" maxlength="14" value="${escapeAttr(local.myName)}">
+        <button class="btn btn-primary btn-block" id="btnQuickJoin">Join room ${escapeHtml(local.pendingJoinCode)}</button>
+        <button class="btn btn-ghost btn-block" id="btnHostInstead">Host a different game instead</button>
+      </div>
+    `);
+  }
+  return screenWrap(`
+    <div class="landing-hero">
+      ${logo()}
+      <p>Run a live social-deduction game in your house. One device hosts, everyone else connects directly — no server to set up.</p>
+      <div class="tag-strip">// P2P &middot; NO ACCOUNT &middot; NO INSTALL</div>
+    </div>
+    <div class="stack">
+      <input id="nameInput" type="text" placeholder="YOUR NAME" maxlength="14" value="${escapeAttr(local.myName)}">
+      <button class="btn btn-primary btn-block" id="btnHost">Host a game</button>
+      <button class="btn btn-block" id="btnJoin">Join a game</button>
+    </div>
+    <div class="divider"></div>
+    <div class="small-note">Hosting keeps the game running on your phone. Keep the app open and your screen from locking during play.</div>
+  `);
+}
+
+function viewJoinEntry(){
+  return screenWrap(`
+    <div class="eyebrow" style="margin-bottom:6px;">JOIN GAME</div>
+    <h2 style="font-size:22px; margin-bottom:18px;">Enter the room code</h2>
+    <div class="stack">
+      <input id="codeInput" type="text" placeholder="ROOM CODE" maxlength="5" style="text-transform:uppercase; letter-spacing:.2em; text-align:center; font-size:20px;">
+      <button class="btn btn-primary btn-block" id="btnConnect">Connect</button>
+      <button class="btn btn-ghost btn-block" id="btnBack">Back</button>
+    </div>
+  `);
+}
+
+function viewConnecting(){
+  return screenWrap(`
+    <div class="screen center-col" style="justify-content:center; flex:1;">
+      <div class="eyebrow">CONNECTING</div>
+      <h2 style="margin-top:10px;">Linking to ${escapeHtml(local.roomCode)}&hellip;</h2>
+      <div class="small-note" id="connectStatus" style="margin-top:10px; min-height:16px;">${escapeHtml(local.connectStatus||'Starting up...')}</div>
+      <button class="btn btn-ghost" id="btnCancelConnect" style="margin-top:26px;">Cancel</button>
+      <div class="divider" style="width:100%;"></div>
+      <div class="small-note" style="width:100%; text-align:left; opacity:.6; white-space:pre-wrap; max-height:140px; overflow-y:auto;">${escapeHtml(debugLog.join('\\n'))}</div>
+    </div>
+  `);
+}
+
+/* ---- Host setup ---- */
+function viewHostSetup(){
+  const tasks = local.taskPool.map((t,i)=>`
+    <div class="task-row">
+      <input type="text" data-idx="${i}" class="taskPoolInput" value="${escapeAttr(t)}">
+      <div class="icon-btn removeTaskBtn" data-idx="${i}">&times;</div>
+    </div>`).join('');
+  return screenWrap(`
+    <div class="eyebrow" style="margin-bottom:6px;">HOST SETUP</div>
+    <h2 style="font-size:22px; margin-bottom:16px;">Build the mission</h2>
+
+    <div class="card stack">
+      <div class="row"><h3 style="font-size:14px;">Task pool</h3><div class="spacer"></div><span class="small-note">${local.taskPool.length} tasks</span></div>
+      <div class="stack" id="taskPoolList">${tasks}</div>
+      <button class="btn btn-ghost" id="btnAddTask">+ Add task</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card stack">
+      <div class="row"><span>Imposters</span><div class="spacer"></div>
+        <div class="stepper">
+          <button id="impDown">&minus;</button>
+          <span class="val" id="impVal">${local.settings.imposterCount}</span>
+          <button id="impUp">+</button>
+        </div>
+      </div>
+      <div class="row"><span>Tasks per crewmate</span><div class="spacer"></div>
+        <div class="stepper">
+          <button id="tppDown">&minus;</button>
+          <span class="val" id="tppVal">${local.settings.tasksPerPlayer}</span>
+          <button id="tppUp">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="small-note" style="margin-top:14px;">Meetings and voting are controlled manually — no countdown timers. You call it, discuss out loud, then move to voting when ready.</div>
+
+    <div class="divider"></div>
+    <button class="btn btn-primary btn-block" id="btnCreateRoom">Create room</button>
+    <button class="btn btn-ghost btn-block" id="btnBack" style="margin-top:10px;">Back</button>
+  `);
+}
+
+/* ---- Lobby ---- */
+function viewLobby(){
+  const items = local.players.map(p=>`
+    <div class="player-item">
+      <div class="avatar">${initials(p.name)}</div>
+      <span>${escapeHtml(p.name)}${p.id===local.myId?' <span class="small-note">(you)</span>':''}${p.id===hostIdOf()?' <span class="small-note">&bull; host</span>':''}</span>
+    </div>`).join('');
+  const canStart = local.isHost && local.players.length >= (local.settings.imposterCount+2);
+  const inviteUrl = buildInviteUrl(local.roomCode);
+  let qrSvg = '';
+  if(local.isHost && typeof qrcode!=='undefined'){
+    try{
+      const qr = qrcode(0, 'M');
+      qr.addData(inviteUrl);
+      qr.make();
+      qrSvg = qr.createSvgTag({cellSize:5, margin:2});
+    }catch(e){ logDbg('QR generation failed: '+e); }
+  }
+  return screenWrap(`
+    <div class="row">${logo()}<div class="spacer"></div><span class="pill on">LOBBY</span></div>
+    <div class="room-code">${escapeHtml(local.roomCode)}</div>
+    ${local.isHost && qrSvg ? `
+      <div class="qr-card">${qrSvg}</div>
+      <div class="small-note center-col" style="margin-bottom:10px;">Scan to join instantly &mdash; no code needed.</div>
+      <div class="row" style="gap:10px;">
+        <button class="btn btn-block" id="btnShareInvite">Share invite link</button>
+      </div>
+    ` : `<div class="small-note center-col" style="margin-bottom:16px;">Share this code &mdash; others tap "Join a game" and enter it.</div>`}
+    <div class="divider"></div>
+    <div class="player-list">${items}</div>
+    <div class="spacer"></div>
+    ${local.isHost ? `
+      <div class="divider"></div>
+      <button class="btn btn-primary btn-block" id="btnStart" ${canStart?'':'disabled'}>Start game</button>
+      ${canStart?'':`<div class="small-note" style="margin-top:8px;">Need at least ${local.settings.imposterCount+2} players for ${local.settings.imposterCount} imposter(s).</div>`}
+    ` : `<div class="small-note center-col">Waiting for the host to start&hellip;</div>`}
+  `);
+}
+
+/* ---- Role reveal ---- */
+function viewRole(){
+  const isImp = local.role==='imposter';
+  return screenWrap(`
+    <div class="role-screen" style="flex:1;">
+      <div class="eyebrow">YOUR ROLE</div>
+      <div class="role-badge ${isImp?'imp':'crew'}">${isImp?'IMPOSTER':'CREWMATE'}</div>
+      <p class="small-note" style="max-width:280px;">${isImp?'Blend in. Fake your tasks. Eliminate crewmates when you get the chance, without getting caught.':'Complete your tasks and watch for anyone acting suspicious.'}</p>
+      <div class="divider" style="width:100%;"></div>
+      <div style="width:100%; text-align:left;">
+        <h3 style="font-size:14px; margin-bottom:10px;">${isImp?'Your cover tasks':'Your tasks'}</h3>
+        <div class="stack">${local.tasks.map(t=>`<div class="card" style="padding:12px 14px;"><span class="task-label">${escapeHtml(t.label)}</span></div>`).join('')}</div>
+      </div>
+      <div class="divider" style="width:100%;"></div>
+      <button class="btn btn-primary btn-block" id="btnEnterGame">Enter the game</button>
+    </div>
+  `);
+}
+
+/* ---- Playing ---- */
+function viewPlaying(){
+  const pct = local.taskProgress.total ? Math.round(100*local.taskProgress.done/local.taskProgress.total) : 0;
+  const taskItems = local.tasks.map(t=>`
+    <div class="task-item ${t.done?'done':''}" data-task="${t.id}">
+      <div class="task-check">${t.done?'&#10003;':''}</div>
+      <div class="task-label ${t.done?'done':''}">${escapeHtml(t.label)}</div>
+    </div>`).join('');
+  const roster = local.players.map(p=>`<span class="roster-chip ${p.alive?'':'dead'}">${escapeHtml(p.name)}</span>`).join('');
+  const isImp = local.role==='imposter';
+  const aliveOthers = local.players.filter(p=>p.alive && p.id!==local.myId);
+  return screenWrap(`
+    <div class="row">${logo()}<div class="spacer"></div><span class="pill ${isImp?'dead':'on'}">${isImp?'IMPOSTER':'CREWMATE'}</span></div>
+    <div class="eyebrow" style="margin-top:18px;">CREW TASK PROGRESS</div>
+    <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>
+    <div class="small-note" style="margin-top:6px;">${local.taskProgress.done} / ${local.taskProgress.total} complete</div>
+
+    <div class="divider"></div>
+    <h3 style="font-size:14px; margin-bottom:10px;">${isImp?'Cover tasks (fake it)':'Your tasks'}</h3>
+    <div class="stack">${taskItems}</div>
+
+    <div class="divider"></div>
+    <h3 style="font-size:14px; margin-bottom:8px;">Crew roster</h3>
+    <div class="roster-mini">${roster}</div>
+
+    ${isImp ? `
+      <div class="divider"></div>
+      <button class="btn eliminate-btn btn-block" id="btnEliminate" ${aliveOthers.length?'':'disabled'}>Eliminate a player</button>
+    `:''}
+
+    <div class="hazard-dock">
+      <div class="hazard-btn" id="hazardBtn">
+        <div class="hazard-core"><span class="txt">&#9888; EMERGENCY MEETING</span></div>
+        <div class="cover"><span class="cover-label">SLIDE / TAP TO ARM</span></div>
+      </div>
+    </div>
+
+    ${local.eliminatePickerOpen ? `
+      <div class="picker-overlay" id="eliminateOverlay">
+        <div class="picker-sheet">
+          <div class="eyebrow" style="color:var(--red);">ELIMINATE</div>
+          <h2 style="margin:8px 0 14px;">Who did you get?</h2>
+          <div class="vote-list">
+            ${aliveOthers.map(p=>`<div class="vote-item" data-elim="${p.id}"><div class="avatar">${initials(p.name)}</div><span>${escapeHtml(p.name)}</span></div>`).join('')}
+          </div>
+          <button class="btn btn-ghost btn-block" id="btnCancelEliminate" style="margin-top:14px;">Cancel</button>
+        </div>
+      </div>
+    ` : ''}
+  `);
+}
+
+function viewGhost(){
+  const roster = local.players.map(p=>`<span class="roster-chip ${p.alive?'':'dead'}">${escapeHtml(p.name)}</span>`).join('');
+  return screenWrap(`
+    <div class="center-col" style="flex:1; justify-content:center; opacity:.85;">
+      <div class="eyebrow">ELIMINATED</div>
+      <h2 style="margin-top:8px; font-size:26px;">You're a ghost</h2>
+      <p class="small-note" style="max-width:260px; text-align:center; margin-top:8px;">Stay quiet. Don't reveal you're out. You can still watch meetings, but you can't vote or do tasks.</p>
+      <div class="divider" style="width:100%;"></div>
+      <div class="roster-mini">${roster}</div>
+    </div>
+  `);
+}
+
+/* ---- Meeting / voting ---- */
+function viewMeeting(){
+  const m = local.meeting || {};
+  return screenWrap(`
+    <div class="meeting-screen">
+      <div class="klaxon-icon">&#9888;</div>
+      <div class="eyebrow">EMERGENCY MEETING</div>
+      <h2 style="margin-top:6px;">Called by ${escapeHtml(m.calledByName||'someone')}</h2>
+      <p class="small-note" style="margin-top:10px;">Discuss out loud in person.</p>
+      ${local.isHost ? `
+        <div class="divider" style="width:100%;"></div>
+        <button class="btn btn-primary btn-block" id="btnStartVoting">Move to voting</button>
+      ` : `<div class="small-note" style="margin-top:20px;">Waiting for the host to open voting&hellip;</div>`}
+    </div>
+  `, 'meeting-screen-outer');
+}
+
+function viewVoting(){
+  const items = local.voteCandidates.map(c=>`
+    <div class="vote-item ${local.myVote===c.id?'selected':''}" data-vote="${c.id}">
+      <div class="avatar">${initials(c.name)}</div><span>${escapeHtml(c.name)}</span>
+    </div>`).join('');
+  const canVote = local.alive;
+  return screenWrap(`
+    <div class="meeting-screen">
+      <div class="eyebrow">CAST YOUR VOTE</div>
+      ${canVote?'':'<div class="small-note" style="margin-top:10px;">Ghosts can\'t vote &mdash; just watch.</div>'}
+      <div class="vote-list">
+        ${canVote?items:''}
+        ${canVote?`<div class="vote-item skip ${local.myVote==='skip'?'selected':''}" data-vote="skip">SKIP VOTE</div>`:''}
+      </div>
+      ${local.myVote && canVote?'<div class="small-note" style="margin-top:14px;">Vote locked in. Waiting on others&hellip;</div>':''}
+      ${local.isHost ? `<button class="btn btn-ghost btn-block" id="btnEndVote" style="margin-top:18px;">End vote now</button>` : ''}
+    </div>
+  `);
+}
+
+/* ---- Results ---- */
+function viewResults(){
+  const r = local.lastResult || {};
+  return screenWrap(`
+    <div class="center-col" style="flex:1; justify-content:center;">
+      <div class="eyebrow">MEETING RESULT</div>
+      ${r.ejectedName ? `
+        <div class="result-name">${escapeHtml(r.ejectedName)} ejected</div>
+        <div class="result-role" style="color:${r.wasImposter?'var(--red)':'var(--green)'}">${r.wasImposter?'WAS AN IMPOSTER':'WAS NOT AN IMPOSTER'}</div>
+      ` : `<div class="result-name">No one was ejected</div><div class="result-role" style="color:var(--text-dim)">VOTE WAS SKIPPED / TIED</div>`}
+      <div class="divider" style="width:100%;"></div>
+      <div class="small-note">Game continuing&hellip;</div>
+    </div>
+  `);
+}
+
+/* ---- Game over ---- */
+function viewGameOver(){
+  const g = local.gameOverInfo || {winner:'crew', roles:[]};
+  const crewWon = g.winner==='crew';
+  const roles = g.roles.map(r=>`
+    <div class="player-item">
+      <div class="avatar">${initials(r.name)}</div>
+      <span>${escapeHtml(r.name)}</span><div class="spacer"></div>
+      <span class="pill ${r.role==='imposter'?'dead':'on'}">${r.role.toUpperCase()}</span>
+    </div>`).join('');
+  return screenWrap(`
+    <div class="winner-banner" style="color:${crewWon?'var(--green)':'var(--red)'}">${crewWon?'CREW WINS':'IMPOSTERS WIN'}</div>
+    <div class="stack">${roles}</div>
+    <div class="divider"></div>
+    ${local.isHost?`<button class="btn btn-primary btn-block" id="btnRestart">Play again</button>`:`<div class="small-note center-col">Waiting for host to restart&hellip;</div>`}
+    <button class="btn btn-ghost btn-block" id="btnExit" style="margin-top:10px;">Exit</button>
+  `);
+}
+
+function viewError(){
+  return screenWrap(`
+    <div class="center-col" style="flex:1; justify-content:center;">
+      <div class="eyebrow" style="color:var(--red);">CONNECTION ERROR</div>
+      <h2 style="margin-top:10px; text-align:center; font-size:18px;">${escapeHtml(local.errorMsg||'Something went wrong.')}</h2>
+      <div class="row" style="gap:10px; margin-top:20px;">
+        <button class="btn btn-primary" id="btnRetryConnect">Try again</button>
+        <button class="btn btn-ghost" id="btnBack">Back to start</button>
+      </div>
+      <div class="divider" style="width:100%;"></div>
+      <div class="small-note" style="width:100%; text-align:left; opacity:.6; white-space:pre-wrap; max-height:160px; overflow-y:auto;">${escapeHtml(debugLog.join('\\n'))}</div>
+    </div>
+  `);
+}
+
+/* ---------------- Helpers ---------------- */
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeAttr(s){ return escapeHtml(s); }
+function initials(name){ return (name||'?').trim().slice(0,2).toUpperCase(); }
+function hostIdOf(){ return local.isHost ? local.myId : (game? null : local.hostPeerId); }
+function buildInviteUrl(code){ return location.origin + location.pathname + '#room=' + code; }
+
+function goto(phase){ local.phase = phase; render(); }
+
+/* ---------------- Event binding ---------------- */
+function bindEvents(){
+  const $ = (id)=>document.getElementById(id);
+
+  if($('btnQuickJoin')){
+    $('btnQuickJoin').onclick = ()=>{
+      const name = $('nameInput').value.trim();
+      if(!name){ shake('nameInput'); return; }
+      local.myName = name;
+      joinRoom(local.pendingJoinCode);
+    };
+  }
+  if($('btnHostInstead')){
+    $('btnHostInstead').onclick = ()=>{
+      local.pendingJoinCode = null;
+      history.replaceState(null, '', location.pathname);
+      render();
+    };
+  }
+  if($('btnHost')){
+    $('btnHost').onclick = ()=>{
+      const name = $('nameInput').value.trim();
+      if(!name){ shake('nameInput'); return; }
+      local.myName = name;
+      goto('hostSetup');
+    };
+  }
+  if($('btnJoin')){
+    $('btnJoin').onclick = ()=>{
+      const name = $('nameInput').value.trim();
+      if(!name){ shake('nameInput'); return; }
+      local.myName = name;
+      goto('joinEntry');
+    };
+  }
+  if($('btnBack')){ $('btnBack').onclick = ()=>{ teardownConnections(); goto('landing'); }; }
+  if($('btnCancelConnect')){ $('btnCancelConnect').onclick = ()=>{ clearTimeout(connectTimeoutHandle); teardownConnections(); goto(local.isHost?'hostSetup':'joinEntry'); }; }
+  if($('btnRetryConnect')){
+    $('btnRetryConnect').onclick = ()=>{
+      if(local.isHost){ createRoom(); } else { joinRoom(local.roomCode); }
+    };
+  }
+  if($('btnConnect')){
+    $('btnConnect').onclick = ()=>{
+      const code = $('codeInput').value.trim().toUpperCase();
+      if(code.length<3){ shake('codeInput'); return; }
+      joinRoom(code);
+    };
+  }
+
+  // host setup
+  document.querySelectorAll('.taskPoolInput').forEach(inp=>{
+    inp.oninput = ()=>{ local.taskPool[+inp.dataset.idx] = inp.value; };
+  });
+  document.querySelectorAll('.removeTaskBtn').forEach(btn=>{
+    btn.onclick = ()=>{ local.taskPool.splice(+btn.dataset.idx,1); render(); };
+  });
+  if($('btnAddTask')){ $('btnAddTask').onclick = ()=>{ local.taskPool.push('New task'); render(); }; }
+  bindStepper('imp','imposterCount',1,4);
+  bindStepper('tpp','tasksPerPlayer',1,10);
+  if($('btnCreateRoom')){ $('btnCreateRoom').onclick = ()=> createRoom(); }
+
+  if($('btnShareInvite')){
+    $('btnShareInvite').onclick = async ()=>{
+      const url = buildInviteUrl(local.roomCode);
+      const btn = $('btnShareInvite');
+      if(navigator.share){
+        try{ await navigator.share({title:'Join my CREWLINK game', text:'Tap to join room '+local.roomCode, url}); }
+        catch(e){ /* user cancelled share sheet, ignore */ }
+      } else if(navigator.clipboard){
+        try{
+          await navigator.clipboard.writeText(url);
+          const orig = btn.textContent;
+          btn.textContent = 'Link copied!';
+          setTimeout(()=>{ btn.textContent = orig; }, 1600);
+        }catch(e){ prompt('Copy this link:', url); }
+      } else {
+        prompt('Copy this link:', url);
+      }
+    };
+  }
+  if($('btnStart')){ $('btnStart').onclick = startGame; }
+  if($('btnEnterGame')){ $('btnEnterGame').onclick = ()=>{ goto(local.alive?'playing':'ghost'); }; }
+
+  document.querySelectorAll('.task-item').forEach(el=>{
+    el.onclick = ()=>{ toggleTask(el.dataset.task); };
+  });
+
+  if($('hazardBtn')){
+    let armed=false;
+    $('hazardBtn').onclick = ()=>{
+      if(!armed){ armed=true; $('hazardBtn').classList.add('open'); return; }
+      callMeeting();
+    };
+  }
+  if($('btnEliminate')){ $('btnEliminate').onclick = ()=>{ local.eliminatePickerOpen=true; render(); }; }
+  if($('btnCancelEliminate')){ $('btnCancelEliminate').onclick = ()=>{ local.eliminatePickerOpen=false; render(); }; }
+  document.querySelectorAll('[data-elim]').forEach(el=>{
+    el.onclick = ()=>{
+      sendToHost({t:'eliminate', target: el.dataset.elim});
+      local.eliminatePickerOpen=false;
+      render();
+    };
+  });
+
+  if($('btnStartVoting')){ $('btnStartVoting').onclick = ()=>{ if(local.isHost) startVoting(); }; }
+  if($('btnEndVote')){ $('btnEndVote').onclick = ()=>{ if(local.isHost) tallyVotes(); }; }
+
+  document.querySelectorAll('.vote-item[data-vote]').forEach(el=>{
+    el.onclick = ()=>{
+      if(!local.alive) return;
+      local.myVote = el.dataset.vote;
+      sendToHost({t:'vote', target: el.dataset.vote});
+      render();
+    };
+  });
+
+  if($('btnRestart')){ $('btnRestart').onclick = restartGame; }
+  if($('btnExit')){ $('btnExit').onclick = ()=>{ teardownConnections(); location.reload(); }; }
+}
+
+function bindStepper(prefix, key, min, max, step){
+  step = step||1;
+  const down=document.getElementById(prefix+'Down'), up=document.getElementById(prefix+'Up');
+  if(down) down.onclick = ()=>{ local.settings[key]=Math.max(min, local.settings[key]-step); render(); };
+  if(up) up.onclick = ()=>{ local.settings[key]=Math.min(max, local.settings[key]+step); render(); };
+}
+function shake(id){
+  const el=document.getElementById(id);
+  el.style.borderColor='var(--red)';
+  setTimeout(()=>{ el.style.borderColor=''; },500);
+}
+
+/* ---------------- Networking: HOST ---------------- */
+function createRoom(attempt){
+  attempt = attempt||0;
+  local.taskPool = local.taskPool.filter(t=>t.trim().length>0);
+  if(local.taskPool.length===0){ local.taskPool = DEFAULT_TASKS.slice(); }
+  local.isHost = true;
+  if(attempt===0){ local.roomCode = roomCode(); }
+  goto('connecting');
+  debugLog = [];
+  setConnectStatus('Opening secure link to signaling service...');
+
+  try{ if(peer) peer.destroy(); }catch(e){}
+  peer = new Peer('crewlink-'+local.roomCode, { debug:1 });
+
+  clearTimeout(connectTimeoutHandle);
+  connectTimeoutHandle = setTimeout(()=>{
+    if(local.phase==='connecting'){
+      showError('Timed out reaching the signaling service. This usually means the network is blocking WebSocket/WebRTC traffic (common on school, corporate, or hotel wifi). Try switching to mobile data or a different wifi network, then try again.');
+    }
+  }, 12000);
+
+  peer.on('open', (id)=>{
+    clearTimeout(connectTimeoutHandle);
+    setConnectStatus('Room created.');
+    local.myId = id;
+    game = newGame();
+    game.players[id] = { id, name: local.myName, conn:null, role:null, alive:true, tasks:[] };
+    local.players = [{id, name:local.myName, alive:true}];
+    goto('lobby');
+  });
+  peer.on('connection', (conn)=>{
+    logDbg('Incoming connection from '+conn.peer);
+    conns[conn.peer] = conn;
+    conn.on('open', ()=>{});
+    conn.on('data', (msg)=> handleHostMessage(conn, msg));
+    conn.on('close', ()=> handlePlayerLeft(conn.peer));
+  });
+  peer.on('disconnected', ()=>{
+    logDbg('Disconnected from signaling service, attempting reconnect...');
+    if(peer && !peer.destroyed){ try{ peer.reconnect(); }catch(e){} }
+  });
+  peer.on('error', (err)=>{
+    clearTimeout(connectTimeoutHandle);
+    logDbg('Peer error: '+err.type);
+    if(err.type==='unavailable-id' && attempt<3){
+      // stale room code still registered from a previous session — just pick a new one
+      setConnectStatus('That code was still reserved, generating a new one...');
+      local.roomCode = roomCode();
+      setTimeout(()=>createRoom(attempt+1), 400);
+      return;
+    }
+    showError('Could not create room ('+err.type+'). If this keeps happening, try a different network — some wifi networks block the connection this app needs.');
+  });
+}
+
+function handleHostMessage(conn, msg){
+  const fromId = conn.peer;
+  switch(msg.t){
+    case 'join': {
+      if(game.phase!=='lobby'){
+        try{ conn.send({t:'joinRejected', reason:'This game has already started. Ask the host to wait for the next round.'}); }catch(e){}
+        return;
+      }
+      game.players[fromId] = { id:fromId, name:msg.name||'Player', conn, role:null, alive:true, tasks:[] };
+      broadcastLobby();
+      break;
+    }
+    case 'taskToggle': {
+      const p = game.players[fromId]; if(!p) return;
+      const task = p.tasks.find(t=>t.id===msg.taskId); if(!task) return;
+      task.done = msg.done;
+      broadcastPublicState();
+      break;
+    }
+    case 'callMeeting': {
+      const p = game.players[fromId]; if(!p || !p.alive) return;
+      if(game.phase!=='playing') return;
+      startMeeting(p.name);
+      break;
+    }
+    case 'vote': {
+      const p = game.players[fromId]; if(!p || !p.alive) return;
+      if(game.phase!=='voting') return;
+      game.votes[fromId] = msg.target;
+      checkVoteComplete();
+      break;
+    }
+    case 'eliminate': {
+      const p = game.players[fromId]; if(!p || p.role!=='imposter' || !p.alive) return;
+      if(game.phase!=='playing') return;
+      const target = game.players[msg.target];
+      if(!target || !target.alive) return;
+      target.alive = false;
+      logDbg('Eliminated: '+target.name);
+      if(target.id === local.myId){
+        local.alive = false;
+        vibrateKilled();
+        if(local.phase==='playing'){ goto('ghost'); }
+      } else {
+        sendTo(target.id, {t:'youEliminated'});
+      }
+      broadcastPublicState();
+      const w = checkWin();
+      if(w) endGame(w);
+      break;
+    }
+  }
+}
+
+function handlePlayerLeft(id){
+  if(!game) return;
+  delete conns[id];
+  const p = game.players[id];
+  if(game.phase==='lobby'){
+    delete game.players[id];
+    broadcastLobby();
+    return;
+  }
+  if(p && p.alive && game.phase!=='gameover'){
+    p.alive = false;
+    logDbg(p.name+' disconnected — marked eliminated');
+    broadcastPublicState();
+    if(game.phase==='voting'){
+      delete game.votes[id];
+      checkVoteComplete();
+    }
+    const w = checkWin();
+    if(w) endGame(w);
+  }
+}
+
+function checkVoteComplete(){
+  const aliveIds = Object.values(game.players).filter(x=>x.alive).map(x=>x.id);
+  if(aliveIds.length>0 && aliveIds.every(id=>game.votes.hasOwnProperty(id))){
+    tallyVotes();
+  }
+}
+
+function broadcastLobby(){
+  const players = Object.values(game.players).map(p=>({id:p.id,name:p.name}));
+  local.players = players.map(p=>({id:p.id,name:p.name,alive:true}));
+  hostBroadcastAll({t:'lobby', players});
+  render();
+}
+
+function hostBroadcastAll(msg){
+  Object.values(conns).forEach(c=>{ try{ c.send(msg);}catch(e){} });
+}
+function sendTo(id, msg){
+  if(id===local.myId) return; // host handles own state locally
+  const c = conns[id];
+  if(c){ try{ c.send(msg);}catch(e){} }
+}
+function sendToHost(msg){
+  if(local.isHost){ handleHostMessage({peer:local.myId}, msg); }
+  else if(hostConn){ hostConn.send(msg); }
+}
+
+/* ---------------- Game flow (host-authoritative) ---------------- */
+function startGame(){
+  const ids = Object.keys(game.players);
+  const shuffled = ids.slice().sort(()=>Math.random()-0.5);
+  const impCount = Math.min(game.settings.imposterCount, Math.floor(ids.length/2));
+  const imposters = new Set(shuffled.slice(0, impCount));
+
+  ids.forEach(id=>{
+    const p = game.players[id];
+    p.role = imposters.has(id) ? 'imposter' : 'crewmate';
+    p.alive = true;
+    const n = game.settings.tasksPerPlayer;
+    const pool = game.taskPool;
+    const chosen = [];
+    for(let i=0;i<n;i++){ chosen.push(pool[Math.floor(Math.random()*pool.length)]); }
+    p.tasks = chosen.map((label,i)=>({id:'t'+i+'_'+id.slice(-4), label, done:false}));
+  });
+
+  game.phase='playing';
+  ids.forEach(id=>{
+    const p = game.players[id];
+    if(id===local.myId){
+      local.role=p.role; local.tasks=p.tasks.map(t=>({...t})); local.alive=true;
+    } else {
+      sendTo(id, {t:'roleAssign', role:p.role, tasks:p.tasks});
+    }
+  });
+  hostBroadcastAll({t:'gameStart'});
+  broadcastPublicState();
+  goto('role');
+}
+
+function computeTaskProgress(){
+  const crew = Object.values(game.players).filter(p=>p.role==='crewmate');
+  let done=0, total=0;
+  crew.forEach(p=>{ total+=p.tasks.length; done+=p.tasks.filter(t=>t.done).length; });
+  return {done,total};
+}
+
+function broadcastPublicState(){
+  const progress = computeTaskProgress();
+  const players = Object.values(game.players).map(p=>({id:p.id,name:p.name,alive:p.alive}));
+  local.players = players;
+  local.taskProgress = progress;
+  hostBroadcastAll({t:'publicState', players, taskProgress:progress, phase:game.phase});
+  if(local.phase==='playing' || local.phase==='ghost' || local.phase==='lobby'){ render(); }
+}
+
+function startMeeting(calledByName){
+  game.phase='meeting';
+  const startAt = Date.now() + 450; // small buffer so every device schedules the alarm for the same wall-clock moment
+  hostBroadcastAll({t:'meetingStart', calledByName, startAt});
+  local.meeting = {calledByName};
+  goto('meeting');
+  scheduleAlarmAt(startAt);
+}
+
+function startVoting(){
+  game.phase='voting';
+  game.votes = {};
+  const candidates = Object.values(game.players).filter(p=>p.alive).map(p=>({id:p.id,name:p.name}));
+  hostBroadcastAll({t:'votingStart', candidates});
+  local.voteCandidates = candidates;
+  local.myVote = null;
+  goto('voting');
+}
+
+function tallyVotes(){
+  const counts = {};
+  Object.values(game.votes).forEach(v=>{ counts[v]=(counts[v]||0)+1; });
+  let top=null, topCount=0, tie=false;
+  Object.keys(counts).forEach(k=>{
+    if(counts[k]>topCount){ top=k; topCount=counts[k]; tie=false; }
+    else if(counts[k]===topCount){ tie=true; }
+  });
+  let ejectedId = (top && top!=='skip' && !tie) ? top : null;
+  let wasImposter = false;
+  let ejectedName = null;
+  if(ejectedId){
+    const p = game.players[ejectedId];
+    p.alive=false;
+    wasImposter = p.role==='imposter';
+    ejectedName = p.name;
+    if(ejectedId === local.myId){
+      local.alive = false;
+      vibrateKilled();
+    }
+  }
+  const resultMsg = {t:'meetingResult', ejectedId, ejectedName, wasImposter, tally:counts};
+  hostBroadcastAll(resultMsg);
+  local.lastResult = {ejectedName, wasImposter, tally:counts};
+  goto('results');
+
+  const w = checkWin();
+  setTimeout(()=>{
+    if(w){ endGame(w); }
+    else{ game.phase='playing'; hostBroadcastAll({t:'backToPlaying'}); broadcastPublicState(); goto(local.alive?'playing':'ghost'); }
+  }, 3200);
+}
+
+function checkWin(){
+  const alive = Object.values(game.players).filter(p=>p.alive);
+  const aliveImp = alive.filter(p=>p.role==='imposter').length;
+  const aliveCrew = alive.length - aliveImp;
+  const progress = computeTaskProgress();
+  if(aliveImp<=0) return 'crew';
+  if(aliveImp>=aliveCrew) return 'imposters';
+  if(progress.total>0 && progress.done>=progress.total) return 'crew';
+  return null;
+}
+
+function endGame(winner){
+  game.phase='gameover';
+  const roles = Object.values(game.players).map(p=>({id:p.id,name:p.name,role:p.role}));
+  hostBroadcastAll({t:'gameOver', winner, roles});
+  local.gameOverInfo = {winner, roles};
+  goto('gameover');
+}
+
+function restartGame(){
+  const keepPlayers = {};
+  Object.keys(game.players).forEach(id=>{
+    keepPlayers[id] = { id, name:game.players[id].name, conn:game.players[id].conn, role:null, alive:true, tasks:[] };
+  });
+  game.players = keepPlayers;
+  game.phase='lobby';
+  hostBroadcastAll({t:'restart'});
+  broadcastLobby();
+  goto('lobby');
+}
+
+/* ---------------- Networking: CLIENT ---------------- */
+function joinRoom(code){
+  local.roomCode = code;
+  goto('connecting');
+  debugLog = [];
+  setConnectStatus('Opening secure link to signaling service...');
+
+  try{ if(peer) peer.destroy(); }catch(e){}
+  peer = new Peer(undefined, { debug:1 });
+
+  clearTimeout(connectTimeoutHandle);
+  connectTimeoutHandle = setTimeout(()=>{
+    if(local.phase==='connecting'){
+      showError("Timed out reaching the signaling service. This usually means the network is blocking WebSocket/WebRTC traffic (common on school, corporate, or hotel wifi). Try switching to mobile data, or make sure you're on the same wifi as the host.");
+    }
+  }, 12000);
+
+  peer.on('open', (id)=>{
+    setConnectStatus('Linked to signaling service. Requesting host...');
+    local.myId = id;
+    hostConn = peer.connect('crewlink-'+code, {reliable:true});
+    local.hostPeerId = 'crewlink-'+code;
+
+    const hostTimeout = setTimeout(()=>{
+      if(local.phase==='connecting'){
+        showError("The room code \"" + code + "\" didn't respond. Double-check the code with the host, and make sure the host's app is still open (their screen may have locked).");
+      }
+    }, 9000);
+
+    hostConn.on('open', ()=>{
+      clearTimeout(hostTimeout);
+      clearTimeout(connectTimeoutHandle);
+      setConnectStatus('Connected. Waiting for host to accept...');
+      hostConn.send({t:'join', name:local.myName});
+      // stays on 'connecting' until the host responds with 'lobby' (accepted) or 'joinRejected'
+      setTimeout(()=>{
+        if(local.phase==='connecting'){
+          showError('The host never confirmed your join. Try again, or check that the room code is still active.');
+        }
+      }, 8000);
+    });
+    hostConn.on('data', handleClientMessage);
+    hostConn.on('close', ()=> showError('Lost connection to host.'));
+    hostConn.on('error', (err)=>{ clearTimeout(hostTimeout); logDbg('Connection error: '+err); showError('Could not reach that room code.'); });
+  });
+  peer.on('disconnected', ()=>{
+    logDbg('Disconnected from signaling service, attempting reconnect...');
+    if(peer && !peer.destroyed){ try{ peer.reconnect(); }catch(e){} }
+  });
+  peer.on('error', (err)=>{
+    clearTimeout(connectTimeoutHandle);
+    logDbg('Peer error: '+err.type);
+    if(err.type==='peer-unavailable'){ showError('No game found with code "'+code+'". Check the code, and make sure the host has created the room.'); }
+    else{ showError('Connection error: '+err.type); }
+  });
+}
+
+function handleClientMessage(msg){
+  switch(msg.t){
+    case 'lobby': {
+      local.players = msg.players.map(p=>({id:p.id,name:p.name,alive:true}));
+      if(local.phase==='connecting' || local.phase==='lobby'){ goto('lobby'); }
+      break;
+    }
+    case 'joinRejected': {
+      showError(msg.reason || 'Could not join this game.');
+      break;
+    }
+    case 'roleAssign': {
+      local.role = msg.role;
+      local.tasks = msg.tasks.map(t=>({...t}));
+      local.alive = true;
+      break;
+    }
+    case 'gameStart': {
+      goto('role');
+      break;
+    }
+    case 'publicState': {
+      local.players = msg.players;
+      local.taskProgress = msg.taskProgress;
+      if(['playing','ghost','lobby'].includes(local.phase)) render();
+      break;
+    }
+    case 'meetingStart': {
+      local.meeting = {calledByName:msg.calledByName};
+      goto('meeting');
+      scheduleAlarmAt(msg.startAt);
+      break;
+    }
+    case 'votingStart': {
+      local.voteCandidates = msg.candidates;
+      local.myVote = null;
+      goto('voting');
+      break;
+    }
+    case 'meetingResult': {
+      local.lastResult = {ejectedName:msg.ejectedName, wasImposter:msg.wasImposter, tally:msg.tally};
+      if(msg.ejectedId && msg.ejectedId===local.myId){
+        local.alive = false;
+        vibrateKilled();
+      }
+      goto('results');
+      break;
+    }
+    case 'backToPlaying': {
+      goto(local.alive?'playing':'ghost');
+      break;
+    }
+    case 'youEliminated': {
+      local.alive = false;
+      vibrateKilled();
+      if(local.phase==='playing') goto('ghost');
+      break;
+    }
+    case 'gameOver': {
+      local.gameOverInfo = {winner:msg.winner, roles:msg.roles};
+      goto('gameover');
+      break;
+    }
+    case 'restart': {
+      local.role=null; local.tasks=[]; local.alive=true; local.lastResult=null; local.gameOverInfo=null;
+      goto('lobby');
+      break;
+    }
+    case 'hostClosed': {
+      showError('The host ended the game (they closed the app or lost connection).');
+      break;
+    }
+  }
+}
+
+/* ---------------- Shared actions ---------------- */
+function toggleTask(taskId){
+  const task = local.tasks.find(t=>t.id===taskId);
+  if(!task) return;
+  task.done = !task.done;
+  sendToHost({t:'taskToggle', taskId, done:task.done});
+  if(local.isHost){ broadcastPublicState(); }
+  render();
+}
+
+function callMeeting(){
+  sendToHost({t:'callMeeting'});
+}
+
+function flashAlert(){
+  const el = document.createElement('div');
+  el.className='flash-overlay';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 2400);
+}
+
+/* ---- Synthesized emergency alarm (no external audio file needed) ---- */
+let audioCtx = null;
+function unlockAudio(){
+  if(audioCtx) return;
+  try{
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended'){ audioCtx.resume(); }
+  }catch(e){ logDbg('Audio unlock failed: '+e); }
+}
+document.addEventListener('pointerdown', unlockAudio, {once:true, capture:true});
+document.addEventListener('click', unlockAudio, {once:true, capture:true});
+
+function playAlarmSound(durationMs){
+  if(!audioCtx) unlockAudio();
+  if(!audioCtx) return;
+  if(audioCtx.state==='suspended'){ audioCtx.resume(); }
+  const master = audioCtx.createGain();
+  master.gain.value = 0.22;
+  master.connect(audioCtx.destination);
+  const start = audioCtx.currentTime;
+  const end = start + durationMs/1000;
+  const period = 0.55; // seconds per wail cycle
+  let t = start;
+  while(t < end){
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sawtooth';
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(1, t+0.04);
+    g.gain.setValueAtTime(1, t+period-0.05);
+    g.gain.linearRampToValueAtTime(0.0001, t+period);
+    osc.frequency.setValueAtTime(520, t);
+    osc.frequency.linearRampToValueAtTime(880, t+period/2);
+    osc.frequency.linearRampToValueAtTime(520, t+period);
+    osc.connect(g); g.connect(master);
+    osc.start(t); osc.stop(t+period+0.02);
+    t += period;
+  }
+}
+
+// Schedules the alarm (flash + vibrate + siren) to fire at a shared wall-clock
+// timestamp so every connected device goes off together, instead of each
+// device reacting the instant its network message happens to arrive.
+function scheduleAlarmAt(startAt){
+  const delay = Math.max(0, startAt - Date.now());
+  setTimeout(triggerAlarm, delay);
+}
+function triggerAlarm(){
+  flashAlert();
+  if(navigator.vibrate) navigator.vibrate([300,150,300,150,300,150,300,150,300]);
+  playAlarmSound(5000);
+}
+function vibrateKilled(){
+  // Distinct pattern from the meeting alarm so it's recognizable by feel alone.
+  // Only fires on platforms that support the Vibration API (Android/Chrome; not iOS Safari).
+  if(navigator.vibrate) navigator.vibrate([450,120,450]);
+}
+
+function showError(msg){
+  local.errorMsg = msg;
+  goto('error');
+}
+
+function teardownConnections(){
+  clearTimeout(connectTimeoutHandle);
+  try{ if(peer) peer.destroy(); }catch(e){}
+  peer=null; conns={}; hostConn=null; game=null;
+}
+
+// Best-effort: notify the other side immediately when this tab is closing,
+// rather than waiting for WebRTC's slower disconnect-timeout detection.
+window.addEventListener('pagehide', ()=>{
+  try{
+    if(local.isHost && game){
+      hostBroadcastAll({t:'hostClosed'});
+    } else if(hostConn){
+      hostConn.close();
+    }
+  }catch(e){}
+});
+
+render();
+</script>
+</body>
+</html>
